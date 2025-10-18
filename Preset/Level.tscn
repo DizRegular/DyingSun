@@ -12,5 +12,4 @@ z_index = 999
 [node name="Camera2D" type="Camera2D" parent="Player"]
 
 [node name="Tiles" parent="." instance=ExtResource( 2 )]
-position = Vector2( 160, 247 )
 scale = Vector2( 4, 4 )
