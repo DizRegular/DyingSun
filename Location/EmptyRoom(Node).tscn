@@ -1,0 +1,51 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Roof.tres" type="TileSet" id=1]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Walls.tres" type="TileSet" id=2]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Trees.tres" type="TileSet" id=3]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/GroundProp.tres" type="TileSet" id=4]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/FloorGround.tres" type="TileSet" id=5]
+
+[node name="Empty Room" type="Node2D"]
+
+[node name="Ground" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 5 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="Tree" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 3 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="WallBack" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="PropGroundBack" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 4 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="WallFront" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="PropGroundFront" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 4 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="Roof" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 1 )
+cell_size = Vector2( 16, 8 )
+format = 1
