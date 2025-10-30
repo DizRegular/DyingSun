@@ -1,9 +1,6 @@
-[gd_scene load_steps=7 format=2]
+[gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://Preset/UnnamedHero.tscn" type="PackedScene" id=1]
-[ext_resource path="res://Preset/TileSets/TilesCollection.tscn" type="PackedScene" id=2]
-[ext_resource path="res://images (2).jpg" type="Texture" id=3]
-[ext_resource path="res://Preset/Ui/Control.tscn" type="PackedScene" id=4]
+[ext_resource path="res://images (2).jpg" type="Texture" id=1]
 
 [sub_resource type="StyleBoxFlat" id=1]
 bg_color = Color( 0.839216, 0.521569, 0.521569, 1 )
@@ -15,30 +12,9 @@ corner_detail = 20
 bg_color = Color( 0.541176, 0.317647, 0.317647, 1 )
 border_color = Color( 0, 0, 0, 1 )
 
-[node name="Node2D" type="Node2D"]
-scale = Vector2( 1.13111, 0.891762 )
-
-[node name="Player" parent="." instance=ExtResource( 1 )]
-position = Vector2( 559.627, 590.965 )
-z_index = 999
-
-[node name="Camera2D" type="Camera2D" parent="Player"]
-
-[node name="Tiles" parent="." instance=ExtResource( 2 )]
-position = Vector2( 160, 247 )
-
-[node name="Control" type="Control" parent="."]
-visible = false
-margin_left = -37.1317
-margin_top = 74.0108
-margin_right = 2.86834
-margin_bottom = 114.011
-
-[node name="Button" type="Button" parent="Control"]
-margin_left = 676.327
-margin_top = 29.1558
-margin_right = 688.327
-margin_bottom = 49.1558
+[node name="Control" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
 
 [node name="player_info" type="Panel" parent="."]
 modulate = Color( 0.878431, 0.87451, 0.917647, 1 )
@@ -67,7 +43,7 @@ margin_left = -7.94649
 margin_top = -9.95103
 margin_right = 7.05351
 margin_bottom = 11.049
-texture = ExtResource( 3 )
+texture = ExtResource( 1 )
 expand = true
 
 [node name="name" type="Label" parent="player_info"]
@@ -79,7 +55,8 @@ margin_right = 42.0
 margin_bottom = 22.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
-text = "Player"
+text = "Player 2
+"
 
 [node name="EXP_bar" type="ProgressBar" parent="player_info"]
 margin_left = 19.6102
@@ -88,10 +65,4 @@ margin_right = 104.61
 margin_bottom = 39.6223
 custom_colors/font_color = Color( 0.929412, 0.894118, 0.0627451, 1 )
 custom_colors/font_color_shadow = Color( 0.572549, 0.458824, 0.4, 1 )
-value = 21.0
-
-[node name="Control2" parent="." instance=ExtResource( 4 )]
-margin_left = -0.884083
-margin_top = 241.096
-margin_right = -0.884083
-margin_bottom = 241.096
+value = 10.0
