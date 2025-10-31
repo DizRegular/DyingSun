@@ -1,0 +1,137 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://Preset/Ui/picture_ui/panel (1).png" type="Texture" id=1]
+[ext_resource path="res://Preset/Ui/picture_ui/coin.png" type="Texture" id=2]
+[ext_resource path="res://Preset/Ui/picture_ui/bar_bg.png" type="Texture" id=3]
+[ext_resource path="res://Preset/Ui/picture_ui/bar_fill.png" type="Texture" id=4]
+[ext_resource path="res://Preset/Ui/picture_ui/left.png" type="Texture" id=5]
+
+[sub_resource type="Theme" id=1]
+
+[node name="Control" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_pivot_offset = Vector2( 235, 591 )
+
+[node name="money_counter" type="NinePatchRect" parent="."]
+margin_left = 1129.0
+margin_top = 656.0
+margin_right = 1263.0
+margin_bottom = 693.0
+theme = SubResource( 1 )
+texture = ExtResource( 1 )
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+
+[node name="Coin" type="Sprite" parent="money_counter"]
+position = Vector2( 103, 16 )
+scale = Vector2( 0.124201, 0.148322 )
+texture = ExtResource( 2 )
+
+[node name="Label" type="Label" parent="money_counter"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_left = -13.0
+margin_top = -13.5
+margin_right = 67.0
+margin_bottom = 14.5
+text = "10"
+align = 1
+valign = 1
+
+[node name="HP_bar" type="HBoxContainer" parent="."]
+margin_left = 28.0
+margin_top = 22.0
+margin_right = 306.0
+margin_bottom = 62.0
+
+[node name="Label" type="Label" parent="HP_bar"]
+margin_top = 13.0
+margin_right = 18.0
+margin_bottom = 27.0
+text = "HP"
+
+[node name="TextureProgress" type="TextureProgress" parent="HP_bar"]
+margin_left = 22.0
+margin_right = 278.0
+margin_bottom = 40.0
+step = -1.0
+value = 87.0
+texture_under = ExtResource( 3 )
+texture_progress = ExtResource( 4 )
+
+[node name="XP_bar" type="HBoxContainer" parent="."]
+margin_left = 27.0
+margin_top = 67.0
+margin_right = 305.0
+margin_bottom = 107.0
+
+[node name="Label" type="Label" parent="XP_bar"]
+margin_top = 13.0
+margin_right = 16.0
+margin_bottom = 27.0
+text = "XP"
+
+[node name="TextureProgress" type="TextureProgress" parent="XP_bar"]
+margin_left = 20.0
+margin_right = 276.0
+margin_bottom = 40.0
+step = -1.0
+value = 30.0
+texture_under = ExtResource( 3 )
+texture_progress = ExtResource( 4 )
+
+[node name="move_control" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="w" type="Sprite" parent="move_control"]
+position = Vector2( 178, 454 )
+scale = Vector2( 0.183594, 0.183594 )
+texture = ExtResource( 1 )
+
+[node name="w2" type="Sprite" parent="move_control"]
+position = Vector2( 178, 454 )
+scale = Vector2( 0.183594, 0.183594 )
+texture = ExtResource( 1 )
+
+[node name="Panel(1)2" type="Sprite" parent="move_control"]
+position = Vector2( 268, 541 )
+scale = Vector2( 0.183594, 0.183594 )
+texture = ExtResource( 1 )
+offset = Vector2( 76.2556, 32.6807 )
+
+[node name="Panel(1)4" type="Sprite" parent="move_control"]
+position = Vector2( 73, 547 )
+scale = Vector2( 0.183594, 0.183594 )
+texture = ExtResource( 1 )
+
+[node name="Panel(1)3" type="Sprite" parent="move_control"]
+position = Vector2( 179, 638 )
+scale = Vector2( 0.183594, 0.183594 )
+texture = ExtResource( 1 )
+
+[node name="Left" type="Sprite" parent="move_control"]
+position = Vector2( 180, 452 )
+rotation = 1.58499
+scale = Vector2( 0.330078, 0.335938 )
+texture = ExtResource( 5 )
+
+[node name="Left4" type="Sprite" parent="move_control"]
+position = Vector2( 179, 638 )
+rotation = 4.70861
+scale = Vector2( 0.330078, 0.335938 )
+texture = ExtResource( 5 )
+
+[node name="Left2" type="Sprite" parent="move_control"]
+position = Vector2( 282, 545 )
+rotation = 3.13299
+scale = Vector2( 0.330078, 0.335938 )
+texture = ExtResource( 5 )
+
+[node name="Left3" type="Sprite" parent="move_control"]
+position = Vector2( 74, 545 )
+rotation = -0.00771308
+scale = Vector2( 0.330078, 0.335938 )
+texture = ExtResource( 5 )
