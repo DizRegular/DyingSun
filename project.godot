@@ -21,7 +21,7 @@ _global_script_class_icons={
 [application]
 
 config/name="Cardo"
-run/main_scene="res://scenes/MapScene.tscn"
+run/main_scene="res://scenes/MapGenerator/MapScene.tscn"
 config/icon="res://icon.png"
 
 [display]
