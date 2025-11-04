@@ -1,0 +1,7 @@
+[gd_resource type="Resource" load_steps=2 format=2]
+
+[ext_resource path="res://Scripts/Pattern.gd" type="Script" id=1]
+
+[resource]
+script = ExtResource( 1 )
+cells = [ Vector2( 2, 0 ), Vector2( -2, 0 ), Vector2( 0, 2 ), Vector2( 0, -2 ) ]

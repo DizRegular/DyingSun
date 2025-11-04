@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://Scripts/Unit.gd" type="Script" id=1]
+[ext_resource path="res://Preset/UnitRangePattern/AttackPattern/Attack_Pattern_A.tres" type="Resource" id=2]
+[ext_resource path="res://Asset/Companion/JinAhh.png" type="Texture" id=3]
+[ext_resource path="res://Preset/UnitRangePattern/MovePattern/move_Pattern_B.tres" type="Resource" id=4]
+
+[node name="Unit" type="KinematicBody2D"]
+script = ExtResource( 1 )
+max_health = 80
+attack_stat = 50
+defense_stat = 50
+unit_picture = ExtResource( 3 )
+unit_class = 3
+movement_pattern = ExtResource( 4 )
+attack_pattern = ExtResource( 2 )
+
+[node name="Sprite" type="Sprite" parent="."]
+texture = ExtResource( 3 )
+offset = Vector2( 0, -8 )
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
