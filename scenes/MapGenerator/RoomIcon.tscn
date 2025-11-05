@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://RoomIcon.gd" type="Script" id=1]
+[ext_resource path="res://WhiteCircle.png" type="Texture" id=2]
+
+[node name="RoomIcon" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="IconSprite" type="Sprite" parent="."]
+scale = Vector2( 0.0493164, 0.0493164 )
+texture = ExtResource( 2 )
