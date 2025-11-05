@@ -19,22 +19,21 @@ export(Texture) var unit_picture # For UI portraits
 export(UnitClass) var unit_class = UnitClass.WARRIOR
 
 # --- Equipment ---
-# This is set *after* instancing, from the PartyMember resource
 var equipped_weapon: Weapon = null
 
 # --- Patterns ---
-# Movement is still controlled by the unit
 export(Resource) var movement_pattern
-# ATTACK PATTERN AND WEAPON_SLOT ARE NOW REMOVED FROM HERE
 
 # --- Internal Vars ---
 var grid_pos = Vector2(0, 0) setget set_grid_pos
 var tilemap_node = null
+var is_enemy = false # NEW: Flag to identify faction
+
+# --- NEW: Signal for UI ---
+signal health_changed
 
 func _ready():
 	current_ap = max_ap
-	# Health is now set *after* equipment is applied (in equip_weapon)
-	# But we set it here as a fallback.
 	current_health = get_modified_max_health()
 	pass
 
@@ -48,20 +47,16 @@ func set_grid_pos(new_pos):
 
 # --- Public Functions ---
 
-# NEW: Called by Main.gd when the unit is deployed
 func equip_weapon(weapon: Weapon):
 	if weapon and weapon.weapon_class == unit_class:
 		equipped_weapon = weapon
-		# Apply stats from weapon
 		unit_name = equipped_weapon.weapon_name + " " + unit_name
-		# Set current health based on new max health
 		current_health = get_modified_max_health()
 	else:
 		print("Weapon incompatible or null!")
-		current_health = get_modified_max_health() # Set base health
+		current_health = get_modified_max_health()
 
 # --- Stat Getters (NEW) ---
-# These functions calculate stats including weapon buffs
 func get_modified_max_health() -> int:
 	if equipped_weapon:
 		return int(max_health * equipped_weapon.hp_multiplier)
@@ -88,7 +83,6 @@ func get_valid_move_cells():
 			cells.append(grid_pos + offset)
 	return cells
 
-# UPDATED: Now gets pattern from the *weapon*
 func get_valid_attack_cells():
 	var cells = []
 	if equipped_weapon and equipped_weapon.attack_pattern:
@@ -97,6 +91,16 @@ func get_valid_attack_cells():
 	else:
 		print("No weapon or attack pattern!")
 	return cells
+
+# --- NEW: Skill Cell Getter ---
+func get_valid_skill_cells():
+	var cells = []
+	if equipped_weapon and equipped_weapon.unique_skill and equipped_weapon.unique_skill.skill_pattern:
+		for offset in equipped_weapon.unique_skill.skill_pattern.cells:
+			cells.append(grid_pos + offset)
+	return cells
+	
+# --- Action Functions (UPDATED) ---
 
 func move_to_cell(target_cell_pos):
 	if current_ap <= 0:
@@ -108,7 +112,8 @@ func move_to_cell(target_cell_pos):
 	print("Unit moved. AP remaining: ", current_ap)
 	return current_ap
 	
-func attack_cell(target_cell_pos):
+# UPDATED: Now takes main_node and deals damage
+func attack_cell(target_cell_pos, main_node: Node2D):
 	if current_ap <= 0:
 		print("Not enough AP to attack!")
 		return current_ap
@@ -119,6 +124,67 @@ func attack_cell(target_cell_pos):
 
 	current_ap -= 1
 	print("Attacked cell ", target_cell_pos, "! AP remaining: ", current_ap)
-	# --- Add your attack/damage logic here ---
+	
+	# --- NEW: Damage Logic ---
+	var target = main_node.get_unit_at(target_cell_pos)
+	if target:
+		# Simple damage formula
+		var damage = get_modified_attack() - target.get_modified_defense()
+		damage = max(1, damage) # Always do at least 1 damage
+		
+		print(unit_name, " deals ", damage, " damage to ", target.unit_name)
+		target.take_damage(damage)
+	else:
+		print("...but missed!")
+	# --- End Damage Logic ---
 	
 	return current_ap
+
+# NEW: Skill execution
+func use_skill(target_cell_pos, main_node: Node2D):
+	if !equipped_weapon or !equipped_weapon.unique_skill:
+		print("No skill to use!")
+		return current_ap
+		
+	var skill = equipped_weapon.unique_skill
+	
+	if current_ap < skill.ap_cost:
+		print("Not enough AP for skill!")
+		return current_ap
+
+	current_ap -= skill.ap_cost
+	print("Used skill '", skill.skill_name, "' on ", target_cell_pos)
+	
+	# Delegate the skill's logic to the skill resource itself
+	skill.execute(self, target_cell_pos, main_node)
+	
+	return current_ap
+
+# --- NEW: Health & Death ---
+
+func take_damage(amount: int):
+	current_health -= amount
+	current_health = max(0, current_health) # Clamp at 0
+	
+	print(unit_name, " takes ", amount, " damage. ", current_health, "/", get_modified_max_health(), " HP left.")
+	
+	# Emit signal for UI to update
+	emit_signal("health_changed")
+	
+	if current_health <= 0:
+		die()
+
+func die():
+	print(unit_name, " has been defeated!")
+	
+	# Remove self from the correct list in GameManager
+	if is_enemy:
+		GameManager.enemy_units.erase(self)
+	else:
+		GameManager.player_units.erase(self)
+	
+	# Check for win/lose
+	GameManager.check_game_over()
+	
+	# Remove from the scene
+	queue_free()

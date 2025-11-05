@@ -27,6 +27,7 @@ onready var unit_def_label = $UI/CombatUI/StatsPanel/Content/StatsVBox/UnitStats
 # --- Exported Resources ---
 export(Array, Resource) var player_party # Drag PartyMember.tres files here
 export(Array, Resource) var initial_weapon_inventory # Drag Weapon.tres files here
+export(Array, Resource) var enemy_layout # NEW: Drag EnemyData.tres files here
 
 # --- State ---
 var selected_unit: Unit = null
@@ -54,6 +55,10 @@ func _ready():
 	GameManager.set_player_party(player_party)
 	GameManager.set_weapon_inventory(initial_weapon_inventory)
 	
+	# NEW: Give GameManager a reference to this node
+	GameManager.main_node = self
+	
+	# Pass empty arrays for now; enemies are spawned after deployment
 	GameManager.start_game([], []) 
 	
 	# Set up the Deployment UI
@@ -70,7 +75,7 @@ func _ready():
 	$UI/CombatUI/EndTurnButton.connect("pressed", self, "_on_EndTurnButton_pressed")
 	$UI/CombatUI/MoveButton.connect("pressed", self, "_on_MoveButton_pressed")
 	$UI/CombatUI/AttackButton.connect("pressed", self, "_on_AttackButton_pressed")
-	$UI/CombatUI/.connect("pressed", self, "_on_SkillButton_pressed") # NEW
+	$UI/CombatUI/SkillButton.connect("pressed", self, "_on_SkillButton_pressed") # Corrected path
 	$UI/DeploymentUI/EndDeploymentButton.connect("pressed", self, "_on_EndDeploymentButton_pressed")
 
 func _process(delta):
@@ -116,38 +121,31 @@ func handle_deployment_input(event):
 				# Deploy the unit!
 				var new_unit = pending_party_member.unit_scene.instance()
 				
-				# Add to the YSort node
-				unit_container.add_child(new_unit) # YSORT FIX
-				
+				unit_container.add_child(new_unit)
 				new_unit.tilemap_node = tilemap
 				
-				# Equip weapon *before* setting position
 				if pending_party_member.equipped_weapon:
 					new_unit.equip_weapon(pending_party_member.equipped_weapon)
 				else:
 					new_unit.equip_weapon(null)
 				
 				new_unit.set_grid_pos(grid_pos)
+				new_unit.is_enemy = false # Explicitly set as player
 				
-				# Add to GameManager and remove from party list
 				GameManager.player_units.append(new_unit)
 				GameManager.player_party.erase(pending_party_member)
 				
-				# Reset state
 				cancel_action()
-				setup_deployment_ui() # Rebuilds UI
+				setup_deployment_ui()
 			else:
-				# Clicked invalid spot
 				cancel_action()
 		else:
 			cancel_action()
 
 func setup_deployment_ui():
-	# Clear old buttons
 	for child in unit_party_container.get_children():
 		child.queue_free()
 	
-	# Create new buttons for available units
 	for member in GameManager.player_party:
 		var btn = Button.new()
 		var text = member.unit_name
@@ -156,78 +154,54 @@ func setup_deployment_ui():
 		else:
 			text += " (No Weapon)"
 		btn.text = text
-		
-		# Set button color based on class
 		btn.set_modulate(CLASS_COLORS[member.unit_class])
-		
-		# Store the party member data *on the button*
 		btn.set_meta("party_member", member)
-		
-		# THE FIX: Make buttons transparent to drag events
 		btn.mouse_filter = Control.MOUSE_FILTER_PASS
-		
 		btn.connect("pressed", self, "_on_deploy_unit_pressed", [member])
 		unit_party_container.add_child(btn)
 
 func setup_weapon_inventory_ui():
-	# Clear old buttons
 	for child in weapon_inventory_container.get_children():
 		child.queue_free()
 	
-	# Create new buttons for available weapons
 	for weapon in GameManager.weapon_inventory:
-		# Use our new button script
 		var btn = WeaponDragButton.new() 
 		btn.text = weapon.weapon_name
-		# Give the button the weapon data
 		btn.weapon = weapon 
-		# Set button color based on class
 		btn.set_modulate(CLASS_COLORS[weapon.weapon_class])
-		
 		weapon_inventory_container.add_child(btn)
 
 # --- Drag and Drop Functions ---
 
-# Called by PartyContainer.gd
 func can_drop_data_on_party(position, data, from_node) -> bool:
 	if data.type != "weapon":
 		return false
-	
-	# Find which button we're hovering over
 	var local_pos = from_node.get_local_mouse_position()
 	for child in from_node.get_children():
 		if child.get_rect().has_point(local_pos):
-			# Found the button!
 			return true
-	
-	# Not over any button
 	return false
 
-# Called by PartyContainer.gd
 func drop_data_on_party(position, data, from_node):
-	# Find the button we dropped on
 	var local_pos = from_node.get_local_mouse_position()
 	var target_button = null
 	
 	for child in from_node.get_children():
 		if child.get_rect().has_point(local_pos):
 			target_button = child
-			break # Found it
+			break 
 
 	if not target_button:
-		return # Missed, dropped on empty space
+		return 
 	
 	var weapon = data.weapon
 	var party_member = target_button.get_meta("party_member") 
 	
-	# Check for class compatibility
 	if weapon.weapon_class != party_member.unit_class:
 		print("Incompatible weapon! Unit: ", party_member.unit_class, " Weapon: ", weapon.weapon_class)
 		return
 
-	# Handle equipping and swapping
 	var old_weapon = party_member.equipped_weapon
-	
 	party_member.equipped_weapon = weapon
 	GameManager.weapon_inventory.erase(weapon)
 	
@@ -236,14 +210,12 @@ func drop_data_on_party(position, data, from_node):
 		
 	print("Equipped ", weapon.weapon_name, " to ", party_member.unit_name)
 	
-	# Rebuild both UIs
 	setup_deployment_ui()
 	setup_weapon_inventory_ui()
 
 # --- (End of Drag/Drop) ---
 
 func _on_deploy_unit_pressed(member: PartyMember):
-	# Called when a unit button in the party UI is clicked
 	if member.equipped_weapon == null:
 		print(member.unit_name, " has no weapon equipped!")
 		return
@@ -258,8 +230,43 @@ func _on_EndDeploymentButton_pressed():
 		return
 		
 	hide_all_ranges()
+	# --- NEW: Spawn enemies *after* player is done ---
+	spawn_enemies()
 	GameManager.finish_deployment()
-	# Combat UI will appear on the next _process frame
+
+
+# --- NEW: Enemy Spawning Function ---
+func spawn_enemies():
+	print("Spawning enemies...")
+	for enemy_data in enemy_layout:
+		if !enemy_data or !enemy_data.unit_scene or !enemy_data.weapon:
+			print("WARNING: Invalid enemy data, skipping.")
+			continue
+			
+		var grid_pos = enemy_data.spawn_position
+		
+		# Check if spawn point is valid
+		if !is_cell_walkable(grid_pos) or get_unit_at(grid_pos) != null:
+			print("WARNING: Cannot spawn enemy at ", grid_pos, ". Cell is blocked or occupied.")
+			continue
+			
+		var new_enemy = enemy_data.unit_scene.instance()
+		
+		unit_container.add_child(new_enemy)
+		new_enemy.tilemap_node = tilemap
+		
+		# Equip weapon
+		new_enemy.equip_weapon(enemy_data.weapon)
+		
+		# Set position
+		new_enemy.set_grid_pos(grid_pos)
+		
+		# --- CRITICAL: Set as enemy ---
+		new_enemy.is_enemy = true 
+		
+		# Add to GameManager
+		GameManager.enemy_units.append(new_enemy)
+		print("Spawned ", new_enemy.unit_name, " at ", grid_pos)
 
 
 # --- Combat Phase Logic ---
@@ -268,12 +275,10 @@ func handle_combat_input(event):
 	if GameManager.current_state != GameManager.TurnState.PLAYER_TURN:
 		return
 
-	# Right-click always cancels the current action
 	if event is InputEventMouseButton and event.button_index == BUTTON_RIGHT:
 		cancel_action()
 		return
 
-	# Left-click handles selection and actions
 	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT:
 		var click_pos = get_global_mouse_position()
 		var grid_pos = tilemap.world_to_map(click_pos)
@@ -281,6 +286,7 @@ func handle_combat_input(event):
 		match current_action_state:
 			ActionState.NONE:
 				var unit_at_click = get_unit_at(grid_pos)
+				# Can only select player units
 				if unit_at_click and unit_at_click in GameManager.player_units:
 					select_unit(unit_at_click)
 				else:
@@ -297,7 +303,8 @@ func handle_combat_input(event):
 			
 			ActionState.ATTACKING:
 				if grid_pos in valid_attack_cells:
-					var new_ap = selected_unit.attack_cell(grid_pos)
+					# --- UPDATED: Pass 'self' as main_node ---
+					var new_ap = selected_unit.attack_cell(grid_pos, self)
 					ap_label.text = "AP: " + str(new_ap) + " / " + str(selected_unit.max_ap)
 					cancel_action()
 					select_unit(selected_unit)
@@ -306,7 +313,7 @@ func handle_combat_input(event):
 			
 			ActionState.SKILL: # NEW
 				if grid_pos in valid_skill_cells:
-					# Pass 'self' as the 'main_node'
+					# --- UPDATED: Pass 'self' as main_node ---
 					var new_ap = selected_unit.use_skill(grid_pos, self) 
 					ap_label.text = "AP: " + str(new_ap) + " / " + str(selected_unit.max_ap)
 					cancel_action()
@@ -317,16 +324,22 @@ func handle_combat_input(event):
 # --- UI Functions (Combat) ---
 
 func select_unit(unit: Unit):
+	# Disconnect from old unit's signal if one was selected
+	if selected_unit and selected_unit.is_connected("health_changed", self, "_on_selected_unit_health_changed"):
+		selected_unit.disconnect("health_changed", self, "_on_selected_unit_health_changed")
+	
 	selected_unit = unit
 	current_action_state = ActionState.NONE
 	hide_all_ranges()
 	print("Selected unit with ", unit.current_ap, " AP.")
 	
+	# --- NEW: Connect to new unit's health signal ---
+	selected_unit.connect("health_changed", self, "_on_selected_unit_health_changed")
+	
 	# --- UPDATE STATS PANEL ---
 	stats_panel.show()
 	unit_portrait.texture = unit.unit_picture
 	unit_name_label.text = unit.unit_name
-	# Use getter functions for stats
 	unit_hp_label.text = "HP: " + str(unit.current_health) + " / " + str(unit.get_modified_max_health())
 	unit_atk_label.text = "ATK: " + str(unit.get_modified_attack())
 	unit_def_label.text = "DEF: " + str(unit.get_modified_defense())
@@ -338,10 +351,8 @@ func select_unit(unit: Unit):
 	# Show UI buttons if unit has AP
 	if unit.current_ap > 0:
 		$UI/CombatUI/MoveButton.show()
-		# Only show Attack if weapon is equipped
 		if unit.equipped_weapon:
 			$UI/CombatUI/AttackButton.show()
-		# Only show Skill if weapon has one AND unit has AP
 		if unit.equipped_weapon and unit.equipped_weapon.unique_skill and unit.current_ap >= unit.equipped_weapon.unique_skill.ap_cost:
 			skill_button.text = unit.equipped_weapon.unique_skill.skill_name
 			skill_button.show()
@@ -352,34 +363,41 @@ func select_unit(unit: Unit):
 		$UI/CombatUI/AttackButton.hide()
 		skill_button.hide()
 
+# --- NEW: Function to update HP label when unit takes damage ---
+func _on_selected_unit_health_changed():
+	if selected_unit:
+		# Just update the HP text
+		unit_hp_label.text = "HP: " + str(selected_unit.current_health) + " / " + str(selected_unit.get_modified_max_health())
+
 func deselect_unit():
+	# Disconnect from old unit's signal
+	if selected_unit and selected_unit.is_connected("health_changed", self, "_on_selected_unit_health_changed"):
+		selected_unit.disconnect("health_changed", self, "_on_selected_unit_health_changed")
+		
 	selected_unit = null
 	current_action_state = ActionState.NONE
 	hide_all_ranges()
 	
-	# Hide all combat UI
 	$UI/CombatUI/MoveButton.hide()
 	$UI/CombatUI/AttackButton.hide()
 	skill_button.hide()
 	ap_label.text = ""
 	ap_label.hide()
-	stats_panel.hide() # Hide stats panel
+	stats_panel.hide()
 
 func cancel_action():
-	# This is now a general-purpose reset
 	hide_all_ranges()
 	current_action_state = ActionState.NONE
 	pending_party_member = null
 	
 	if GameManager.current_state == GameManager.TurnState.DEPLOYMENT:
 		show_deployment_zone()
-		# Rebuild UI in case a drag was cancelled
 		setup_deployment_ui()
 		setup_weapon_inventory_ui()
 	elif selected_unit:
-		select_unit(selected_unit) # Reshows buttons, AP, and Stats
+		select_unit(selected_unit) 
 	else:
-		deselect_unit() # Hides buttons, AP, and Stats
+		deselect_unit() 
 
 # --- Button Handlers (Combat) ---
 
@@ -409,16 +427,15 @@ func _on_EndTurnButton_pressed():
 # --- Helper Functions (NEW & UPDATED) ---
 
 func is_cell_walkable(grid_pos: Vector2) -> bool:
-	# A cell is walkable if it's on the main map AND NOT on the banned map
 	return bool(tilemap.get_cellv(grid_pos) != TileMap.INVALID_CELL) and \
 		   bool(banned_map.get_cellv(grid_pos) == TileMap.INVALID_CELL)
 
 func get_unit_at(grid_position):
 	# Check YSort container for units
 	for unit in unit_container.get_children():
-		# Make sure we're only checking valid Unit nodes
 		if unit is Unit and unit.grid_pos == grid_position:
 			# Check if it's in a known list (player or enemy)
+			# This ensures we don't select a unit that is mid-death
 			if unit in GameManager.player_units or unit in GameManager.enemy_units:
 				return unit
 	return null
@@ -429,10 +446,8 @@ func show_deployment_zone():
 	hide_all_ranges()
 	valid_deployment_cells.clear()
 	
-	# Get all tiles in the DeploymentMap
 	var cells = deployment_map.get_used_cells()
 	for cell in cells:
-		# A tile is valid if it's walkable AND not occupied
 		if is_cell_walkable(cell) and get_unit_at(cell) == null:
 			valid_deployment_cells.append(cell)
 			highlight_map.set_cellv(cell, 0) # Highlight blue
@@ -443,7 +458,6 @@ func show_movement_range(unit: Unit):
 	var potential_cells = unit.get_valid_move_cells()
 	
 	for cell in potential_cells:
-		# A move is valid if it's walkable AND not occupied
 		if is_cell_walkable(cell) and get_unit_at(cell) == null:
 			valid_move_cells.append(cell)
 			highlight_map.set_cellv(cell, 0) # Highlight blue
@@ -456,20 +470,16 @@ func show_attack_range(unit: Unit):
 		
 	valid_attack_cells = unit.get_valid_attack_cells()
 	
-	# Set highlight color based on unit class
-	var tile_id = 0
-	match unit.unit_class:
-		Unit.UnitClass.WARRIOR:
-			tile_id = 0 # Assumes tile 0 in your TileSet is red
-		Unit.UnitClass.ARCHER:
-			tile_id = 1 # Assumes tile 1 is yellow
-		Unit.UnitClass.WIZARD:
-			tile_id = 2 # Assumes tile 2 is purple
-		Unit.UnitClass.SUPPORT:
-			tile_id = 3 # Assumes tile 3 is green
+	# UPDATED: Use the color from our dictionary
+	var tile_id = unit.unit_class 
 	
 	for cell in valid_attack_cells:
-		highlight_attack_map.set_cellv(cell, tile_id)
+		# Highlight red if enemy is present
+		var target = get_unit_at(cell)
+		if target and target.is_enemy:
+			highlight_attack_map.set_cellv(cell, 0) # Tile 0 = Red
+		else:
+			highlight_attack_map.set_cellv(cell, 1) # Tile 1 = Yellow/Neutral
 
 func show_skill_range(unit: Unit): # NEW
 	hide_all_ranges()
@@ -482,11 +492,14 @@ func show_skill_range(unit: Unit): # NEW
 	var potential_cells = unit.get_valid_skill_cells()
 	
 	for cell in potential_cells:
-		# Use the skill's built-in validation logic!
-		# Pass 'self' as the 'main_node'
 		if skill.is_target_valid(unit, cell, self):
 			valid_skill_cells.append(cell)
-			highlight_map.set_cellv(cell, 2) # Use a different color (e.g., tile 2)
+			# Highlight based on target
+			var target = get_unit_at(cell)
+			if target and target.is_enemy:
+				highlight_map.set_cellv(cell, 0) # Tile 0 = Red
+			else:
+				highlight_map.set_cellv(cell, 2) # Tile 2 = Purple/Special
 
 func hide_all_ranges():
 	highlight_map.clear()
