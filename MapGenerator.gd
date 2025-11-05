@@ -1,16 +1,14 @@
 extends Node2D
 
 # -----------------------------------------------------------------
-# --- Export Variables (ต้องตั้งค่าใน Inspector) ---
+# --- Export Variables ---
 # -----------------------------------------------------------------
 export (PackedScene) var room_icon_scene
 export (PackedScene) var player_icon_scene
-
-# (สำคัญ!) ตั้งค่านี้ใน Inspector (เช่น 100)
 export var room_distance = 100 
 
 # -----------------------------------------------------------------
-# --- OnReady Variables (ต้องมีโหนดเหล่านี้ใน Scene) ---
+# --- OnReady Variables ---
 # -----------------------------------------------------------------
 onready var room_container = $RoomContainer
 onready var line_container = $LineContainer
@@ -24,7 +22,7 @@ var start_room = null
 var end_room = null
 var player = null
 
-# --- (ใหม่) กำหนดค่าตายตัวสำหรับแต่ละชั้น ---
+# --- กำหนดค่าตายตัวสำหรับแต่ละชั้น ---
 var FLOOR_CONFIG = {
 	1: { "biome": RoomIcon.Biome.GRASSLAND, "count": 10 },
 	2: { "biome": RoomIcon.Biome.FOREST,    "count": 15 },
@@ -37,7 +35,7 @@ var open_list = []
 var directions = [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]
 
 # Data สำหรับ Floor Management
-var current_floor = 1 # (เริ่มต้นที่ชั้น 1)
+var current_floor = 1
 var floor_seeds = [] 
 var visited_rooms_by_floor = {}
 
@@ -48,7 +46,7 @@ var visited_rooms_by_floor = {}
 func _ready():
 	randomize() 
 	spawn_player()
-	load_floor(1, "start")  # (โหลดชั้น 1 เป็นชั้นแรก)
+	load_floor(1, "start")
 
 func _process(delta):
 	if player != null: 
@@ -68,14 +66,12 @@ func spawn_player():
 	player.connect("prev_floor_requested", self, "go_to_prev_floor")
 
 func go_to_next_floor():
-	# (ถ้าอยู่ที่ชั้น 3 หรือสูงกว่า, ไม่ให้ไปต่อ)
 	if current_floor >= 3:
 		print("สุดทางแล้ว! (Max floor reached)")
 		return 
 	load_floor(current_floor + 1, "start")
 
 func go_to_prev_floor():
-	# (เปลี่ยนจาก > 0 เป็น > 1)
 	if current_floor > 1: 
 		load_floor(current_floor - 1, "end") 
 	else:
@@ -100,33 +96,27 @@ func load_floor(floor_index, spawn_at = "start"):
 	clear_floor()
 	current_floor = floor_index
 	
-	# --- ตรรกะการจำ Seed (แก้ไข) ---
-	# (เราใช้ floor_index - 1 เพื่อแปลง "ชั้น 1" ให้เป็น index "0" ของ Array)
 	var seed_index = floor_index - 1 
-	
 	var floor_seed
 	if seed_index < floor_seeds.size():
-		floor_seed = floor_seeds[seed_index] # ใช้ Seed เก่า
+		floor_seed = floor_seeds[seed_index] 
 	else:
-		floor_seed = randi() # สุ่ม Seed ใหม่
-		floor_seeds.append(floor_seed) # บันทึก
+		floor_seed = randi() 
+		floor_seeds.append(floor_seed) 
 		
 	print("Loading Floor: ", floor_index, " with Seed: ", floor_seed)
 	seed(floor_seed)
 	
-	# --- สร้างแผนที่ ---
 	start_room = null
 	end_room = null
-	generate_floor() # (ฟังก์ชันนี้จะใช้ FLOOR_CONFIG)
+	generate_floor() 
 	
-	# --- อ่าน "สมุดจด" และย้อมสีทึบ ---
 	if visited_rooms_by_floor.has(floor_index):
 		var visited_list = visited_rooms_by_floor[floor_index]
 		for room in all_rooms:
 			if visited_list.has(room.grid_pos):
-				room.icon_sprite.modulate = room.original_color.darkened(0.4)
+				room.set_visited_state(true) # หรี่สี
 	
-	# --- ตรรกะการเกิดของผู้เล่น ---
 	var spawn_room = null
 	if spawn_at == "start":
 		spawn_room = start_room
@@ -137,8 +127,7 @@ func load_floor(floor_index, spawn_at = "start"):
 		player.global_position = spawn_room.global_position
 		player.current_room = spawn_room
 		spawn_room.is_player_here = true
-		
-		# (เราลบโค้ดที่ทำให้ห้องเกิดเป็น "สีขาว" ออกแล้ว)
+		spawn_room.set_visited_state(false) # ห้องสว่าง
 	else:
 		print("ERROR: ไม่พบ Player หรือ Spawn Room ตอนโหลดชั้น!")
 
@@ -146,24 +135,19 @@ func load_floor(floor_index, spawn_at = "start"):
 # --- Map Generation Logic ---
 # -----------------------------------------------------------------
 
-# --- (ฟังก์ชันนี้ "ยกเครื่องใหม่" ให้ใช้ FLOOR_CONFIG) ---
 func build_room_decks():
-	# 1. ดึง "ค่ากำหนด" (Config) สำหรับชั้นปัจจุบัน
 	if not FLOOR_CONFIG.has(current_floor):
 		print("ERROR: ไม่พบค่ากำหนดสำหรับชั้น ", current_floor)
-		return [[], []] # คืนค่า Deck ว่างเปล่า
+		return [[], []] 
 
 	var config = FLOOR_CONFIG[current_floor]
 	var biome = config["biome"]
-	var count = config["count"] # (เช่น 10, 15, หรือ 20)
+	var count = config["count"] 
 
-	# --- Deck 1: Biome Deck ---
 	var biome_deck = []
 	for i in range(count):
-		biome_deck.append(biome)
-	# (ไม่ต้อง shuffle เพราะมันเป็น biome เดียวกันหมด)
+		biome_deck.append(biome) 
 
-	# --- Deck 2: Category Deck (Support/Combat) ---
 	var total_normal_rooms = count
 	var category_deck = []
 	var total_rooms_in_floor = total_normal_rooms + 2 
@@ -182,21 +166,18 @@ func build_room_decks():
 	
 	return [biome_deck, category_deck]
 
-# (ฟังก์ชันนี้เหมือนเดิม)
 func create_room(category, biome):
 	var new_room = room_icon_scene.instance()
 	room_container.add_child(new_room)
 	new_room.setup(category, biome)
 	return new_room
 
-# (ฟังก์ชันนี้เหมือนเดิม)
 func generate_floor():
 	var decks = build_room_decks()
 	var biome_deck = decks[0]
 	var category_deck = decks[1]
 	
-	# (กันพลาด ถ้า build_room_decks ล้มเหลว)
-	if biome_deck.empty() or category_deck.empty():
+	if biome_deck.empty():
 		print("ERROR: Decks ว่างเปล่า, หยุดการสร้างชั้น")
 		return
 
@@ -224,9 +205,11 @@ func generate_floor():
 			var dir = valid_directions[0] 
 			var next_pos = current_room.grid_pos + dir
 			if biome_deck.empty(): break 
-			var biome = biome_deck.pop_back()
+			
+			var biome = biome_deck.pop_back() 
 			var category = category_deck.pop_back()
-			var new_room = create_room(category, biome)
+			var new_room = create_room(category, biome) 
+			
 			new_room.grid_pos = next_pos
 			grid[next_pos] = new_room
 			open_list.append(new_room)
@@ -250,6 +233,7 @@ func generate_floor():
 		end_pos = parent_for_end.grid_pos + dir
 		if not grid.has(end_pos):
 			break 
+	
 	end_room = create_room(RoomIcon.Category.END, RoomIcon.Biome.GRASSLAND)
 	end_room.grid_pos = end_pos
 	grid[end_pos] = end_room
@@ -260,7 +244,7 @@ func generate_floor():
 	calculate_and_draw_layout()
 
 # -----------------------------------------------------------------
-# --- Drawing Functions (เหมือนเดิม) ---
+# --- Drawing Functions ---
 # -----------------------------------------------------------------
 
 func calculate_and_draw_layout():
