@@ -1,8 +1,8 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://Preset/UnitRangePattern/MovePattern/move_Pattern_A.tres" type="Resource" id=1]
-[ext_resource path="res://Scripts/Unit.gd" type="Script" id=2]
-[ext_resource path="res://Preset/UnitRangePattern/AttackPattern/Attack_Pattern_A.tres" type="Resource" id=3]
+[ext_resource path="res://Resource/UnitRangePattern/MovePattern/move_Pattern_A.tres" type="Resource" id=1]
+[ext_resource path="res://Script/Unit.gd" type="Script" id=2]
+[ext_resource path="res://Resource/UnitRangePattern/AttackPattern/Attack_Pattern_A.tres" type="Resource" id=3]
 [ext_resource path="res://Asset/Companion/Lentum.png" type="Texture" id=4]
 
 [node name="Unit" type="KinematicBody2D"]

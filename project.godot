@@ -10,29 +10,65 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Resource",
+"class": "PartyMember",
+"language": "GDScript",
+"path": "res://Script/PartyMember.gd"
+}, {
+"base": "Resource",
 "class": "Pattern",
 "language": "GDScript",
-"path": "res://Scripts/Pattern.gd"
+"path": "res://Script/Pattern.gd"
+}, {
+"base": "Resource",
+"class": "Skill",
+"language": "GDScript",
+"path": "res://Script/SkillScript/Skill.gd"
+}, {
+"base": "Resource",
+"class": "SkillDamage",
+"language": "GDScript",
+"path": "res://Script/SkillScript/SkillDamage.gd"
+}, {
+"base": "Resource",
+"class": "SkillHeal",
+"language": "GDScript",
+"path": "res://Script/SkillScript/SkillHeal.gd"
 }, {
 "base": "KinematicBody2D",
 "class": "Unit",
 "language": "GDScript",
-"path": "res://Scripts/Unit.gd"
+"path": "res://Script/Unit.gd"
+}, {
+"base": "Resource",
+"class": "Weapon",
+"language": "GDScript",
+"path": "res://Script/Weapon.gd"
+}, {
+"base": "Button",
+"class": "WeaponDragButton",
+"language": "GDScript",
+"path": "res://Script/WeaponDragButton.gd"
 } ]
 _global_script_class_icons={
+"PartyMember": "",
 "Pattern": "",
-"Unit": ""
+"Skill": "",
+"SkillDamage": "",
+"SkillHeal": "",
+"Unit": "",
+"Weapon": "",
+"WeaponDragButton": ""
 }
 
 [application]
 
 config/name="Cardo"
-run/main_scene="res://Preset/Level.tscn"
+run/main_scene="res://Resource/Level.tscn"
 config/icon="res://icon.png"
 
 [autoload]
 
-GameManager="*res://Scripts/GameManager.gd"
+GameManager="*res://Script/GameManager.gd"
 
 [display]
 

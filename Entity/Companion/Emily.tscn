@@ -1,11 +1,12 @@
 [gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://Scripts/Unit.gd" type="Script" id=1]
-[ext_resource path="res://Preset/UnitRangePattern/MovePattern/move_Pattern_D.tres" type="Resource" id=3]
+[ext_resource path="res://Script/Unit.gd" type="Script" id=1]
+[ext_resource path="res://Resource/UnitRangePattern/MovePattern/move_Pattern_D.tres" type="Resource" id=3]
 [ext_resource path="res://Asset/Companion/Emily.png" type="Texture" id=4]
 
 [node name="Unit" type="KinematicBody2D"]
 script = ExtResource( 1 )
+unit_name = "Emily"
 max_health = 70
 attack_stat = 65
 defense_stat = 60
