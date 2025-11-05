@@ -1,0 +1,41 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://GachaScreen.gd" type="Script" id=1]
+[ext_resource path="res://Goju.tres" type="Resource" id=2]
+[ext_resource path="res://Karoto.tres" type="Resource" id=3]
+[ext_resource path="res://Sasaki.tres" type="Resource" id=4]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="GachaScreen" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
+script = ExtResource( 1 )
+pool_3_star = [ ExtResource( 2 ) ]
+pool_2_star = [ ExtResource( 3 ) ]
+pool_1_star = [ ExtResource( 4 ) ]
+
+[node name="SinglePullButton" type="Button" parent="GachaScreen"]
+margin_left = 399.0
+margin_top = 314.0
+margin_right = 501.0
+margin_bottom = 334.0
+text = "สุ่ม 1 ครั้ง (10 Shards)"
+
+[node name="MultiPullButton" type="Button" parent="GachaScreen"]
+margin_left = 564.0
+margin_top = 312.0
+margin_right = 682.0
+margin_bottom = 332.0
+text = "สุ่ม 10 ครั้ง (100 Shards)"
+
+[node name="ResultName" type="Label" parent="GachaScreen"]
+margin_right = 40.0
+margin_bottom = 14.0
+
+[node name="ResultImage" type="TextureRect" parent="GachaScreen"]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[connection signal="pressed" from="GachaScreen/SinglePullButton" to="GachaScreen" method="_on_SinglePullButton_pressed"]
+[connection signal="pressed" from="GachaScreen/MultiPullButton" to="GachaScreen" method="_on_MultiPullButton_pressed"]
