@@ -52,5 +52,4 @@ func _on_BrightnessSlider_value_changed(value):
 
 # ถูกเรียกเมื่อกดปุ่ม Back
 func _on_BackButton_pressed():
-	# !!! เปลี่ยน "res://MainMenu.tscn" ให้เป็น Path Scene Main Menu !!!
 	get_tree().change_scene("res://scenes/MainMenu/MainMenu.tscn")
