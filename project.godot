@@ -8,20 +8,10 @@
 
 config_version=4
 
-_global_script_classes=[ {
-"base": "Node2D",
-"class": "RoomIcon",
-"language": "GDScript",
-"path": "res://RoomIcon.gd"
-} ]
-_global_script_class_icons={
-"RoomIcon": ""
-}
-
 [application]
 
 config/name="Cardo"
-run/main_scene="res://scenes/MapGenerator/MapScene.tscn"
+run/main_scene="res://scenes/Gacha/GachaScreen.tscn"
 config/icon="res://icon.png"
 
 [autoload]
