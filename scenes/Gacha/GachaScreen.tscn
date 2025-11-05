@@ -1,0 +1,92 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://scenes/Gacha/GachaScreen.gd" type="Script" id=1]
+[ext_resource path="res://scenes/Gacha/ResultIcon.tscn" type="PackedScene" id=2]
+
+[node name="GachaScreen" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+result_icon_scene = ExtResource( 2 )
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -69.0
+margin_top = -31.0
+margin_right = 69.0
+margin_bottom = 31.0
+
+[node name="PlayerShardsLabel" type="Label" parent="VBoxContainer"]
+margin_right = 138.0
+margin_bottom = 14.0
+text = "Shards: 0"
+align = 1
+
+[node name="Summon1Button" type="Button" parent="VBoxContainer"]
+margin_top = 18.0
+margin_right = 138.0
+margin_bottom = 38.0
+text = "1 Pull (10 Shards)"
+
+[node name="Summon10Button" type="Button" parent="VBoxContainer"]
+margin_top = 42.0
+margin_right = 138.0
+margin_bottom = 62.0
+text = "10 Pull (100 Shards)"
+
+[node name="Result1xPopup" type="PopupPanel" parent="."]
+margin_right = 8.0
+margin_bottom = 8.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Result1xPopup"]
+margin_left = 4.0
+margin_top = 4.0
+margin_right = 204.0
+margin_bottom = 246.0
+
+[node name="ResultTexture" type="TextureRect" parent="Result1xPopup/VBoxContainer"]
+margin_right = 40.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 200, 200 )
+stretch_mode = 6
+
+[node name="ResultName" type="Label" parent="Result1xPopup/VBoxContainer"]
+margin_right = 40.0
+margin_bottom = 14.0
+align = 1
+
+[node name="CloseButton" type="Button" parent="Result1xPopup/VBoxContainer"]
+margin_right = 12.0
+margin_bottom = 20.0
+text = "Close"
+
+[node name="Result10xPopup" type="PopupPanel" parent="."]
+margin_right = 8.0
+margin_bottom = 8.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Result10xPopup"]
+margin_left = 4.0
+margin_top = 4.0
+margin_right = 51.0
+margin_bottom = 28.0
+alignment = 1
+
+[node name="ResultGrid" type="GridContainer" parent="Result10xPopup/VBoxContainer"]
+margin_left = 4.0
+margin_top = 4.0
+margin_right = 4.0
+margin_bottom = 4.0
+columns = 5
+
+[node name="CloseButton10x" type="Button" parent="Result10xPopup/VBoxContainer"]
+margin_right = 12.0
+margin_bottom = 20.0
+text = "Close"
+
+[node name="ErrorDialog" type="AcceptDialog" parent="."]
+margin_right = 83.0
+margin_bottom = 58.0
+window_title = "Error"
