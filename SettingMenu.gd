@@ -1,44 +1,43 @@
 extends Control
 
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
+# ส่วนของ Volume
 onready var volume_slider = $MarginContainer/VBoxContainer/VolumeSlider
 onready var percentage_label = $MarginContainer/VBoxContainer/PercentageLabel
+
+# ส่วนของ Brightness
 onready var brightness_slider = $MarginContainer/VBoxContainer/BrightnessSlider
 onready var brightness_percentage_label = $MarginContainer/VBoxContainer/BrightnessPercentageLabel
-# Called when the node enters the scene tree for the first time.
+
+
+# ฟังก์ชัน _ready() จะถูกเรียกครั้งเดียวตอนเปิดหน้า Setting
 func _ready():
-	# เรียกฟังก์ชัน value_changed ด้วยตนเอง 1 ครั้ง
-	# เพื่อตั้งค่า % เริ่มต้นให้ถูกต้อง
+	# --- ตั้งค่า Volume Slider ---
+	# ตั้งค่า % เริ่มต้นให้ถูกต้อง
 	_on_VolumeSlider_value_changed(volume_slider.value)
+	
+	# --- ตั้งค่า Brightness Slider ---
 	# ดึงค่าที่เก็บไว้ใน SettingsManager มาใส่ใน Slider
 	brightness_slider.value = SettingsManager.brightness
 	# อัปเดต % ของ Brightness ทันที
 	_on_BrightnessSlider_value_changed(brightness_slider.value)
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+# --- ฟังก์ชันที่เชื่อมต่อกับ Signals ---
 
-
+# ถูกเรียกเมื่อเลื่อน Slider เสียง
 func _on_VolumeSlider_value_changed(value):
 	# 1. ปรับเสียง
 	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Master"), value)
 	
-	# 2. คำนวณเปอร์เซ็นต์
+	# 2. คำนวณเปอร์เซ็นต์ (จาก -20 ถึง 0 ให้เป็น 0% ถึง 100%)
 	var percentage = round( (value + 20) / 20 * 100 )
 	
 	# 3. อัปเดตข้อความใน Label
-	percentage_label.text = str(percentage) + "%"
-
-func _on_BackButton_pressed():
-	# เปลี่ยน "res://MainMenu.tscn" ให้เป็น Path ของ Main Menu ของคุณ
-	get_tree().change_scene("res://scenes/MainMenu/MainMenu.tscn")
+	if percentage_label: # เช็คว่า Label มีอยู่จริง
+		percentage_label.text = str(percentage) + "%"
 
 
+# ถูกเรียกเมื่อเลื่อน Slider ความสว่าง
 func _on_BrightnessSlider_value_changed(value):
 	# 1. บอกให้ SettingsManager เปลี่ยนความสว่าง
 	SettingsManager.set_brightness(value)
@@ -47,4 +46,11 @@ func _on_BrightnessSlider_value_changed(value):
 	var percentage = round(value * 100)
 	
 	# 3. อัปเดตข้อความใน Label
-	brightness_percentage_label.text = str(percentage) + "%"
+	if brightness_percentage_label: # เช็คว่า Label มีอยู่จริง
+		brightness_percentage_label.text = str(percentage) + "%"
+
+
+# ถูกเรียกเมื่อกดปุ่ม Back
+func _on_BackButton_pressed():
+	# !!! เปลี่ยน "res://MainMenu.tscn" ให้เป็น Path Scene Main Menu !!!
+	get_tree().change_scene("res://scenes/MainMenu/MainMenu.tscn")

@@ -1,41 +1,30 @@
 extends Control
 
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
 onready var parallax_bg = $ParallaxBackground
 
-# Called when the node enters the scene tree for the first time.
+# (ถ้าไม่มีฟังก์ชัน _ready ก็ไม่ต้องใส่อันนี้)
 func _ready():
-	pass # Replace with function body.
+	pass 
 
+# ฟังก์ชันตรวจจับการเคลื่อนไหวของเมาส์
+func _input(event):
+	if event is InputEventMouseMotion:
+		# ตรวจก่อนว่า parallax_bg ไม่ใช่ null
+		if parallax_bg: 
+			parallax_bg.scroll_offset.x = (event.position.x - get_viewport_rect().size.x / 2.0) * 100.0
+			parallax_bg.scroll_offset.y = (event.position.y - get_viewport_rect().size.y / 2.0) * 100.0
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
-
+# --- ฟังก์ชันของปุ่มต่างๆ ---
 
 func _on_PlayButton_pressed():
-	# เปลี่ยน "res://GameScene.tscn" ให้เป็น Path ของ Scene เกมของคุณ
-	get_tree().change_scene("res://GameScene.tscn")
+	# !!! เปลี่ยน "res://GameScene.tscn" ให้เป็น Path Scene เกม !!!
+	get_tree().change_scene("res://scenes/MapGenerator/MapScene.tscn")
 
 
 func _on_SettingButton_pressed():
-	# เปลี่ยน "res://SettingMenu.tscn" ให้เป็น Path ของ Scene Setting ที่เราเพิ่งสร้าง
+	# !!! เปลี่ยน "res://SettingMenu.tscn" ให้เป็น Path Scene Setting !!!
 	get_tree().change_scene("res://scenes/MainMenu/SettingMenu.tscn")
 
 
 func _on_ExitButton_pressed():
-	# คำสั่งให้ออกจากเกม
 	get_tree().quit()
-
-func _input(event):
-	if event is InputEventMouseMotion:
-		# เราจะใช้ค่า x และ y ของเมาส์ เพื่อเป็นตัวขับเคลื่อน Parallax
-		# event.position คือตำแหน่งเมาส์บนหน้าจอ
-		# get_viewport_rect().size คือขนาดหน้าจอ
-		# / 2.0 เพื่อให้จุดกึ่งกลางของจอเป็นจุด "หยุดนิ่ง"
-		# * 100.0 คือค่าตัวคูณ เพื่อให้มันขยับได้เยอะขึ้น
-		parallax_bg.scroll_offset.x = (event.position.x - get_viewport_rect().size.x / 2.0) * 100.0
-		parallax_bg.scroll_offset.y = (event.position.y - get_viewport_rect().size.y / 2.0) * 100.0

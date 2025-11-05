@@ -1,54 +1,64 @@
 extends Node2D
 
-# ห้องที่ผู้เล่น "ยืนอยู่" ปัจจุบัน
+# Signal ที่จะส่งกลับไปให้ MapGenerator
+signal next_floor_requested
+signal prev_floor_requested
+
 var current_room = null
 
-# (เราไม่ต้องใช้ _physics_process, speed, หรือ target_room อีกแล้ว)
-
-# เราจะใช้ _unhandled_input เพื่อรับการกดปุ่มแค่ครั้งเดียว
-# (Input Map ของคุณ: ui_right, ui_left, ui_up, ui_down)
+# (ใช้ _unhandled_input เพื่อให้คลิกเม้าส์ไม่ขัดจังหวะ)
 func _unhandled_input(event):
 	if current_room == null:
 		return
 
 	var target = null
 
-	# 1. ตรวจสอบการกดปุ่ม
-	if event.is_action_pressed("ui_right"): # <--- แก้ไข
+	# --- 1. ตรวจสอบการ "เดิน" (Snap-to-node) ---
+	if event.is_action_pressed("ui_right"):
 		target = find_connected_room_in_direction(Vector2.RIGHT)
-	elif event.is_action_pressed("ui_left"): # <--- แก้ไข
+	elif event.is_action_pressed("ui_left"):
 		target = find_connected_room_in_direction(Vector2.LEFT)
-	elif event.is_action_pressed("ui_up"): # <--- แก้ไข
+	elif event.is_action_pressed("ui_up"):
 		target = find_connected_room_in_direction(Vector2.UP)
-	elif event.is_action_pressed("ui_down"): # <--- แก้ไข
+	elif event.is_action_pressed("ui_down"):
 		target = find_connected_room_in_direction(Vector2.DOWN)
 
-	# 2. ถ้าเจอห้องเป้าหมาย ให้พยายามเข้า
 	if target != null:
 		try_to_enter_room(target)
+		get_tree().set_input_as_handled() # (หยุด Input ไม่ให้ค้าง)
+		return # (ถ้าเดินแล้ว ไม่ต้อง Interact ต่อ)
+
+	# --- 2. ตรวจสอบการ "Interact" (ปุ่ม E) ---
+	# (ต้องใช้ Input.is_action_just_pressed ไม่ใช่ event)
+	if Input.is_action_just_pressed("interact"):
+		interact_with_current_room()
 		get_tree().set_input_as_handled()
 
 
-# ฟังก์ชันใหม่: ค้นหาห้องที่เชื่อมต่อในทิศทางที่กำหนด
+# (ฟังก์ชันใหม่สำหรับปุ่ม E)
+func interact_with_current_room():
+	if current_room == null:
+		return
+	
+	if current_room.room_category == RoomIcon.Category.END:
+		emit_signal("next_floor_requested")
+	elif current_room.room_category == RoomIcon.Category.START:
+		emit_signal("prev_floor_requested")
+
+
+# (ฟังก์ชันหาห้องในทิศทางที่กด)
 func find_connected_room_in_direction(direction_vector):
 	var best_target = null
-	var best_score = -INF # ใช้ -INF (ลบอนันต์) เพื่อให้ค่าบวกใดๆ ดีกว่าเสมอ
+	var best_score = -INF
 	
 	var current_pos = current_room.global_position
 	
-	# วนลูปดูห้องที่เชื่อมต่อกับห้องปัจจุบันเท่านั้น
 	for room in current_room.connections:
 		var room_pos = room.global_position
-		
-		# คำนวณ Vector จากปัจจุบัน ไปยังห้องที่เชื่อมต่อ
 		var diff_vector = (room_pos - current_pos).normalized()
-		
-		# คำนวณ "Dot Product" เพื่อดูว่าทิศทางตรงกันแค่ไหน
-		# (ค่า 1 = ทิศเดียวกันเป๊ะ, ค่า 0 = ตั้งฉาก, ค่า -1 = ตรงข้าม)
 		var score = diff_vector.dot(direction_vector)
 		
-		# เราต้องการห้องที่ "ค่อนข้าง" ไปในทิศทางนั้น (score > 0.5)
-		# และเป็นห้องที่ดีที่สุด (score > best_score)
+		# (score > 0.5 คือต้องค่อนข้างตรงทิศทาง)
 		if score > 0.5 and score > best_score:
 			best_score = score
 			best_target = room
@@ -56,38 +66,40 @@ func find_connected_room_in_direction(direction_vector):
 	return best_target
 
 
-# ฟังก์ชันนี้ยังคงสำคัญมาก แต่เราจะ "snap" (วาร์ป) ตำแหน่งทันที
+# (ฟังก์ชันพยายามเข้าห้อง)
 func try_to_enter_room(room_to_enter):
 	
-	# --- 1. เช็คว่าใช่ห้องเดิมที่อยู่หรือเปล่า ---
 	if room_to_enter == current_room:
-		return # ไม่ต้องทำอะไร
+		return # (กันการเข้าห้องที่ยืนอยู่)
 
-	# --- 2. เช็คว่าเชื่อมต่อหรือไม่ ---
 	if current_room.connections.has(room_to_enter):
-		# --- สำเร็จ! เข้าห้องได้ ---
 		print("เข้าห้องสำเร็จ: ", room_to_enter.name)
 		
-		# อัปเดตสถานะห้อง (ย้อมสี)
+		# --- (1. "รายงาน" MapGenerator ว่าห้องนี้ถูกเยี่ยมแล้ว) ---
+		if current_room != null:
+			var map_generator = get_parent() 
+			if map_generator.has_method("mark_room_as_visited"):
+				var current_floor_index = map_generator.current_floor
+				# บอก MapGenerator ให้ "จำ" ห้องนี้ไว้
+				map_generator.mark_room_as_visited(current_floor_index, current_room.grid_pos)
+		
+		# --- (2. ตรรกะการเปลี่ยนสี (ใช้สีทึบ) ) ---
 		if current_room != null:
 			current_room.is_player_here = false
-			current_room.modulate = Color(0.5, 0.5, 0.5) # สีเทา (ห้องเก่า)
+			# (เอาสีดั้งเดิมมา "หรี่ลง" 40%)
+			current_room.icon_sprite.modulate = current_room.original_color.darkened(0.4)
 		
 		room_to_enter.is_player_here = true
-		room_to_enter.modulate = Color(1, 1, 1) # สีขาว (ห้องปัจจุบัน)
+		# (เราลบโค้ดที่ทำให้ห้องใหม่เป็น "สีขาว" ออกแล้ว)
+		# ----------------------------------------------
 		
-		# อัปเดตตำแหน่งผู้เล่น
+		# อัปเดตสถานะและ "Snap" ตำแหน่ง
 		self.current_room = room_to_enter
-		
-		# --- (สำคัญ) ย้ายตำแหน่งผู้เล่นทันที ---
 		self.global_position = current_room.global_position
 		
-		# --- ณ จุดนี้ คือจุดที่คุณจะสลับ Scene ไปยังห้องต่อสู้/สนับสนุน ---
+		# (จุดนี้คือจุดที่จะสลับไป Scene ต่อสู้)
 		# if room_to_enter.room_category == RoomIcon.Category.COMBAT:
 		#	  get_tree().change_scene("res://Scenes/CombatScene.tscn")
-		# elif room_to_enter.room_category == RoomIcon.Category.SUPPORT:
-		#	  get_tree().change_scene("res://Scenes/SupportScene.tscn")
 		
 	else:
-		# --- 3. ไม่ใช่ห้องเดิม และไม่ได้เชื่อมต่อ ---
 		print("เข้าห้องไม่ได้! (ไม่ได้เชื่อมต่อ)")

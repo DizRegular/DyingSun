@@ -10,8 +10,10 @@ var canvas_modulate_node
 func _ready():
 	# 1. สร้างโหนด CanvasModulate ขึ้นมา
 	canvas_modulate_node = CanvasModulate.new()
-	# 2. เพิ่มมันเข้าไปใน Scene Tree หลัก (เพื่อให้มันทำงานตลอด)
-	get_tree().get_root().add_child(canvas_modulate_node)
+	
+	# 2. เพิ่มมันเข้าไปใน Scene Tree หลัก (โดยใช้ call_deferred เพื่อกัน Error)
+	get_tree().get_root().call_deferred("add_child", canvas_modulate_node) 
+	
 	# 3. ตั้งค่าความสว่างเริ่มต้น
 	set_brightness(brightness)
 
@@ -23,5 +25,4 @@ func set_brightness(value):
 		# เราจะเปลี่ยนสีของ CanvasModulate
 		# Color(1, 1, 1) = สีขาว (สว่างปกติ)
 		# Color(0.5, 0.5, 0.5) = สีเทา (มืดลง)
-		# Color(1.5, 1.5, 1.5) = สว่างจ้า
 		canvas_modulate_node.color = Color(brightness, brightness, brightness)

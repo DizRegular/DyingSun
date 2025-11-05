@@ -1,47 +1,173 @@
 extends Node2D
 
+# -----------------------------------------------------------------
+# --- Export Variables (ต้องตั้งค่าใน Inspector) ---
+# -----------------------------------------------------------------
 export (PackedScene) var room_icon_scene
 export (PackedScene) var player_icon_scene
 
-# (เราจะใช้ column_distance เป็นระยะห่างทั้ง X และ Y)
-export var room_distance = 80 
+# (สำคัญ!) ตั้งค่านี้ใน Inspector (เช่น 100)
+export var room_distance = 100 
 
+# -----------------------------------------------------------------
+# --- OnReady Variables (ต้องมีโหนดเหล่านี้ใน Scene) ---
+# -----------------------------------------------------------------
 onready var room_container = $RoomContainer
 onready var line_container = $LineContainer
-onready var camera = $Camera2D
+onready var camera = $Camera2D 
 
+# -----------------------------------------------------------------
+# --- Class Variables ---
+# -----------------------------------------------------------------
 var all_rooms = []
 var start_room = null
+var end_room = null
 var player = null
-var ROOM_QUOTAS = {
-	RoomIcon.Biome.GRASSLAND: 10,
-	RoomIcon.Biome.FOREST: 15,
-	RoomIcon.Biome.MOUNTAIN: 20
+
+# --- (ใหม่) กำหนดค่าตายตัวสำหรับแต่ละชั้น ---
+var FLOOR_CONFIG = {
+	1: { "biome": RoomIcon.Biome.GRASSLAND, "count": 10 },
+	2: { "biome": RoomIcon.Biome.FOREST,    "count": 15 },
+	3: { "biome": RoomIcon.Biome.MOUNTAIN,  "count": 20 }
 }
 
-# --- Data Structures สำหรับ Grid ---
-var grid = {} # Key: Vector2(x, y), Value: RoomIcon
-var open_list = [] # ห้องที่ยังสามารถสร้างกิ่งต่อได้
+# Data สำหรับ Grid Generation
+var grid = {}
+var open_list = []
 var directions = [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]
 
-func _ready():
-	randomize()
-	generate_floor()
-	spawn_player()
+# Data สำหรับ Floor Management
+var current_floor = 1 # (เริ่มต้นที่ชั้น 1)
+var floor_seeds = [] 
+var visited_rooms_by_floor = {}
 
-# --- (ฟังก์ชัน build_room_decks() เหมือนเดิมเป๊ะ) ---
-func build_room_decks():
-	var total_normal_rooms = 0
-	var biome_deck = []
-	for biome in ROOM_QUOTAS:
-		var count = ROOM_QUOTAS[biome]
-		total_normal_rooms += count
-		for i in range(count):
-			biome_deck.append(biome)
-	biome_deck.shuffle()
+# -----------------------------------------------------------------
+# --- Godot Core Functions ---
+# -----------------------------------------------------------------
+
+func _ready():
+	randomize() 
+	spawn_player()
+	load_floor(1, "start")  # (โหลดชั้น 1 เป็นชั้นแรก)
+
+func _process(delta):
+	if player != null: 
+		camera.global_position = player.global_position
+
+# -----------------------------------------------------------------
+# --- Player & Floor Management ---
+# -----------------------------------------------------------------
+
+func spawn_player():
+	if player_icon_scene == null:
+		print("Player scene not set in Inspector")
+		return
+	player = player_icon_scene.instance()
+	add_child(player)
+	player.connect("next_floor_requested", self, "go_to_next_floor")
+	player.connect("prev_floor_requested", self, "go_to_prev_floor")
+
+func go_to_next_floor():
+	# (ถ้าอยู่ที่ชั้น 3 หรือสูงกว่า, ไม่ให้ไปต่อ)
+	if current_floor >= 3:
+		print("สุดทางแล้ว! (Max floor reached)")
+		return 
+	load_floor(current_floor + 1, "start")
+
+func go_to_prev_floor():
+	# (เปลี่ยนจาก > 0 เป็น > 1)
+	if current_floor > 1: 
+		load_floor(current_floor - 1, "end") 
+	else:
+		print("อยู่ที่ชั้นแรกสุดแล้ว! (Floor 1)")
+
+func clear_floor():
+	for room in all_rooms:
+		room.queue_free()
+	all_rooms.clear()
+	for line in line_container.get_children():
+		line.queue_free()
+	grid.clear()
+	open_list.clear()
 	
+func mark_room_as_visited(floor_idx, room_grid_pos):
+	if not visited_rooms_by_floor.has(floor_idx):
+		visited_rooms_by_floor[floor_idx] = [] 
+	if not visited_rooms_by_floor[floor_idx].has(room_grid_pos):
+		visited_rooms_by_floor[floor_idx].append(room_grid_pos)
+
+func load_floor(floor_index, spawn_at = "start"):
+	clear_floor()
+	current_floor = floor_index
+	
+	# --- ตรรกะการจำ Seed (แก้ไข) ---
+	# (เราใช้ floor_index - 1 เพื่อแปลง "ชั้น 1" ให้เป็น index "0" ของ Array)
+	var seed_index = floor_index - 1 
+	
+	var floor_seed
+	if seed_index < floor_seeds.size():
+		floor_seed = floor_seeds[seed_index] # ใช้ Seed เก่า
+	else:
+		floor_seed = randi() # สุ่ม Seed ใหม่
+		floor_seeds.append(floor_seed) # บันทึก
+		
+	print("Loading Floor: ", floor_index, " with Seed: ", floor_seed)
+	seed(floor_seed)
+	
+	# --- สร้างแผนที่ ---
+	start_room = null
+	end_room = null
+	generate_floor() # (ฟังก์ชันนี้จะใช้ FLOOR_CONFIG)
+	
+	# --- อ่าน "สมุดจด" และย้อมสีทึบ ---
+	if visited_rooms_by_floor.has(floor_index):
+		var visited_list = visited_rooms_by_floor[floor_index]
+		for room in all_rooms:
+			if visited_list.has(room.grid_pos):
+				room.icon_sprite.modulate = room.original_color.darkened(0.4)
+	
+	# --- ตรรกะการเกิดของผู้เล่น ---
+	var spawn_room = null
+	if spawn_at == "start":
+		spawn_room = start_room
+	else: 
+		spawn_room = end_room
+		
+	if player != null and spawn_room != null:
+		player.global_position = spawn_room.global_position
+		player.current_room = spawn_room
+		spawn_room.is_player_here = true
+		
+		# (เราลบโค้ดที่ทำให้ห้องเกิดเป็น "สีขาว" ออกแล้ว)
+	else:
+		print("ERROR: ไม่พบ Player หรือ Spawn Room ตอนโหลดชั้น!")
+
+# -----------------------------------------------------------------
+# --- Map Generation Logic ---
+# -----------------------------------------------------------------
+
+# --- (ฟังก์ชันนี้ "ยกเครื่องใหม่" ให้ใช้ FLOOR_CONFIG) ---
+func build_room_decks():
+	# 1. ดึง "ค่ากำหนด" (Config) สำหรับชั้นปัจจุบัน
+	if not FLOOR_CONFIG.has(current_floor):
+		print("ERROR: ไม่พบค่ากำหนดสำหรับชั้น ", current_floor)
+		return [[], []] # คืนค่า Deck ว่างเปล่า
+
+	var config = FLOOR_CONFIG[current_floor]
+	var biome = config["biome"]
+	var count = config["count"] # (เช่น 10, 15, หรือ 20)
+
+	# --- Deck 1: Biome Deck ---
+	var biome_deck = []
+	for i in range(count):
+		biome_deck.append(biome)
+	# (ไม่ต้อง shuffle เพราะมันเป็น biome เดียวกันหมด)
+
+	# --- Deck 2: Category Deck (Support/Combat) ---
+	var total_normal_rooms = count
 	var category_deck = []
-	var total_rooms_in_floor = total_normal_rooms + 2
+	var total_rooms_in_floor = total_normal_rooms + 2 
+	
 	var min_support = int(total_rooms_in_floor * 0.2)
 	var max_support = int(total_rooms_in_floor * 0.5)
 	var support_count = randi() % (max_support - min_support + 1) + min_support
@@ -51,30 +177,31 @@ func build_room_decks():
 		category_deck.append(RoomIcon.Category.SUPPORT)
 	for i in range(combat_count):
 		category_deck.append(RoomIcon.Category.COMBAT)
+		
 	category_deck.shuffle()
 	
 	return [biome_deck, category_deck]
 
-# --- (ฟังก์ชัน create_room() เหมือนเดิมเป๊ะ) ---
+# (ฟังก์ชันนี้เหมือนเดิม)
 func create_room(category, biome):
 	var new_room = room_icon_scene.instance()
 	room_container.add_child(new_room)
 	new_room.setup(category, biome)
 	return new_room
 
-# --- ฟังก์ชันสร้างแผนที่ (อัลกอริทึมใหม่) ---
+# (ฟังก์ชันนี้เหมือนเดิม)
 func generate_floor():
 	var decks = build_room_decks()
 	var biome_deck = decks[0]
 	var category_deck = decks[1]
 	
-	all_rooms = []
-	grid = {}
-	open_list = []
-	
-	# --- 1. สร้างห้อง Start ---
+	# (กันพลาด ถ้า build_room_decks ล้มเหลว)
+	if biome_deck.empty() or category_deck.empty():
+		print("ERROR: Decks ว่างเปล่า, หยุดการสร้างชั้น")
+		return
+
 	start_room = create_room(RoomIcon.Category.START, RoomIcon.Biome.GRASSLAND)
-	start_room.grid_pos = Vector2.ZERO # ตำแหน่ง (0, 0)
+	start_room.grid_pos = Vector2.ZERO
 	grid[Vector2.ZERO] = start_room
 	open_list.append(start_room)
 	all_rooms.append(start_room)
@@ -82,104 +209,78 @@ func generate_floor():
 	var rooms_placed_count = 0
 	var total_rooms_to_place = biome_deck.size()
 	
-	# --- 2. วนลูปสร้างห้อง (Random Walk) ---
 	while rooms_placed_count < total_rooms_to_place and not open_list.empty():
-		
-		# สุ่มหยิบห้องจาก List (เพื่อให้มันแตกกิ่งแบบสุ่ม ไม่ใช่เรียงลำดับ)
 		var current_room = open_list[randi() % open_list.size()]
-		
-		# สุ่มทิศทาง
+		var shuffled_dirs = directions.duplicate()
+		shuffled_dirs.shuffle()
 		var valid_directions = []
-		directions.shuffle() # สลับลำดับทิศทาง
-		for dir in directions:
+		for dir in shuffled_dirs:
 			var next_pos = current_room.grid_pos + dir
 			if not grid.has(next_pos):
 				valid_directions.append(dir)
-				
 		if valid_directions.empty():
-			# ห้องนี้ตันแล้ว เอาออกจาก open_list
 			open_list.erase(current_room)
 		else:
-			# ถ้ามีทางไปต่อ, สร้างห้องใหม่
-			var dir = valid_directions[0] # เลือกทิศทางแรกที่สุ่มเจอ
+			var dir = valid_directions[0] 
 			var next_pos = current_room.grid_pos + dir
-			
+			if biome_deck.empty(): break 
 			var biome = biome_deck.pop_back()
 			var category = category_deck.pop_back()
-			
 			var new_room = create_room(category, biome)
 			new_room.grid_pos = next_pos
-			
-			# บันทึกลง Grid และ List
 			grid[next_pos] = new_room
 			open_list.append(new_room)
 			all_rooms.append(new_room)
-			
-			# --- เชื่อมต่อ (สำคัญมาก) ---
 			current_room.connections.append(new_room)
-			new_room.connections.append(current_room) # เชื่อมกลับ
-			
+			new_room.connections.append(current_room)
 			rooms_placed_count += 1
 
-	# --- 3. สร้างห้อง End ---
-	# หาห้องที่อยู่ "ทางตัน" (เชื่อมต่อแค่ 1 ห้อง) ที่ไม่ใช่ห้อง Start
 	var dead_ends = []
 	for room in all_rooms:
 		if room.connections.size() == 1 and room != start_room:
 			dead_ends.append(room)
-			
 	if dead_ends.empty():
-		# (กันพลาด) ถ้าไม่มีทางตัน ให้ใช้ห้องสุดท้ายที่สร้าง
 		dead_ends.append(all_rooms[all_rooms.size() - 1])
-		
 	var parent_for_end = dead_ends[randi() % dead_ends.size()]
 	
-	# พยายามหาที่วางห้อง End ที่ยังว่าง
-	directions.shuffle()
-	var end_pos = parent_for_end.grid_pos + directions[0]
-	for dir in directions:
+	var shuffled_dirs_end = directions.duplicate()
+	shuffled_dirs_end.shuffle()
+	var end_pos = parent_for_end.grid_pos + shuffled_dirs_end[0]
+	for dir in shuffled_dirs_end:
 		end_pos = parent_for_end.grid_pos + dir
 		if not grid.has(end_pos):
-			break # เจอที่ว่าง
-			
-	var end_room = create_room(RoomIcon.Category.END, RoomIcon.Biome.GRASSLAND)
+			break 
+	end_room = create_room(RoomIcon.Category.END, RoomIcon.Biome.GRASSLAND)
 	end_room.grid_pos = end_pos
 	grid[end_pos] = end_room
 	all_rooms.append(end_room)
-	
 	parent_for_end.connections.append(end_room)
-	end_room.connections.append(parent_for_end) # เชื่อมกลับ
+	end_room.connections.append(parent_for_end) 
 
-	# --- 4. คำนวณตำแหน่งและวาดเส้น ---
 	calculate_and_draw_layout()
 
+# -----------------------------------------------------------------
+# --- Drawing Functions (เหมือนเดิม) ---
+# -----------------------------------------------------------------
 
-# --- 4. ฟังก์ชันใหม่: คำนวณ Layout (ง่ายกว่าเดิม) และวาดเส้น ---
 func calculate_and_draw_layout():
-	# --- ลบเส้นเก่า (ถ้ามี) ---
 	for line in line_container.get_children():
 		line.queue_free()
 
-	# --- (เพิ่ม) หาจุดกึ่งกลางจอ ---
 	var screen_center = get_viewport_rect().size / 2
 
-	# --- กำหนดตำแหน่งไอคอน ---
 	for room in all_rooms:
-		# (แก้ไขบรรทัดนี้: บวก screen_center เข้าไป)
 		room.position = (room.grid_pos * room_distance) + screen_center
 	
-	# --- วาดเส้นเชื่อม ---
-	# (โค้ดส่วนนี้เหมือนเดิม ไม่ต้องแก้)
-	var drawn_connections = []
+	var drawn_connections = [] 
 	for room in all_rooms:
 		for connected_room in room.connections:
 			var pair = [room, connected_room]
-			pair.sort()
+			pair.sort() 
 			if not drawn_connections.has(pair):
 				draw_connection(room.position, connected_room.position)
 				drawn_connections.append(pair)
 
-# --- (ฟังก์ชัน draw_connection() เหมือนเดิมเป๊ะ) ---
 func draw_connection(pos1, pos2):
 	var line = Line2D.new()
 	line.add_point(pos1)
@@ -187,19 +288,3 @@ func draw_connection(pos1, pos2):
 	line.width = 3
 	line.default_color = Color(1, 1, 1, 0.4)
 	line_container.add_child(line)
-
-# --- (ฟังก์ชัน spawn_player() เหมือนเดิมเป๊ะ) ---
-func spawn_player():
-	if player_icon_scene == null or start_room == null:
-		print("ยังไม่ได้ตั้งค่า Player Scene หรือ Start Room")
-		return
-		
-	player = player_icon_scene.instance()
-	player.global_position = start_room.global_position
-	player.current_room = start_room
-	start_room.is_player_here = true
-	add_child(player)
-
-func _process(delta):
-	if player != null: # <--- เช็คก่อนว่าผู้เล่นเกิดหรือยัง
-		camera.global_position = player.global_position
