@@ -24,6 +24,10 @@ config/name="Cardo"
 run/main_scene="res://scenes/MapGenerator/MapScene.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+SettingsManager="*res://SettingsManager.gd"
+
 [display]
 
 window/size/width=1280
