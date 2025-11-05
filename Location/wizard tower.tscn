@@ -1,0 +1,78 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Roof.tres" type="TileSet" id=1]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Walls.tres" type="TileSet" id=2]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/Trees.tres" type="TileSet" id=3]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/GroundProp.tres" type="TileSet" id=4]
+[ext_resource path="res://Asset/Background/Grassland/GrassTexturedTileMap/FloorGround.tres" type="TileSet" id=5]
+
+[node name="Empty Room" type="Node2D"]
+
+[node name="Ground" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 5 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -262128, 1, 1, -262127, 1, 1, -262126, 1, 1, -262125, 1, 1, -262124, 1, 1, -262123, 1, 1, -262122, 1, 1, -262121, 1, 1, -262120, 1, 1, -262119, 1, 1, -196592, 1, 1, -196591, 10, 65536, -196590, 10, 65536, -196589, 10, 65536, -196588, 10, 65536, -196587, 10, 65536, -196586, 10, 65536, -196585, 10, 65536, -196584, 10, 65536, -196583, 1, 1, -131056, 1, 1, -131055, 10, 65536, -131054, 10, 65536, -131053, 10, 65536, -131052, 10, 65536, -131051, 10, 65536, -131050, 10, 65536, -131049, 10, 65536, -131048, 10, 65536, -131047, 1, 1, -65520, 1, 1, -65519, 10, 65536, -65518, 10, 65536, -65517, 10, 65536, -65516, 10, 65536, -65515, 10, 65536, -65514, 10, 65536, -65513, 10, 65536, -65512, 10, 65536, -65511, 1, 1, 16, 1, 1, 17, 10, 65536, 18, 10, 65536, 19, 10, 65536, 20, 10, 65536, 21, 10, 65536, 22, 10, 65536, 23, 10, 65536, 24, 10, 65536, 25, 1, 1, 65552, 1, 1, 65553, 10, 65536, 65554, 10, 65536, 65555, 10, 65536, 65556, 10, 65536, 65557, 10, 65536, 65558, 10, 65536, 65559, 10, 65536, 65560, 10, 65536, 65561, 1, 1, 131088, 1, 1, 131089, 10, 65536, 131090, 10, 65536, 131091, 10, 65536, 131092, 10, 65536, 131093, 10, 65536, 131094, 10, 65536, 131095, 10, 65536, 131096, 10, 65536, 131097, 1, 1, 196624, 1, 1, 196625, 10, 65536, 196626, 10, 65536, 196627, 10, 65536, 196628, 10, 65536, 196629, 10, 65536, 196630, 10, 65536, 196631, 10, 65536, 196632, 10, 65536, 196633, 1, 1, 262160, 1, 1, 262161, 10, 65536, 262162, 10, 65536, 262163, 10, 65536, 262164, 10, 65536, 262165, 10, 65536, 262166, 10, 65536, 262167, 10, 65536, 262168, 10, 65536, 262169, 1, 1, 327696, 1, 1, 327697, 1, 1, 327698, 1, 1, 327699, 1, 1, 327700, 1, 1, 327701, 1, 1, 327702, 1, 1, 327703, 1, 1, 327704, 1, 1, 327705, 1, 1 )
+
+[node name="Tree" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 3 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="WallBack" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -262127, 536870914, 1, -262126, 536870914, 1, -262125, 536870914, 1, -262124, 536870914, 1, -262123, 536870914, 1, -262122, 536870914, 1, -262121, 536870914, 1, -262120, 536870914, 1, -196592, 536870914, 0, -131056, 536870914, 0, -65520, 536870914, 0, 16, 536870914, 0, 65552, 536870914, 0, 131088, 536870914, 0, 196624, 536870914, 0, 262160, 536870914, 0 )
+
+[node name="WallBack2" type="TileMap" parent="."]
+position = Vector2( 0, -16 )
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -262127, 536870914, 1, -262126, 536870914, 1, -262125, 536870914, 1, -262124, 536870914, 1, -262123, 536870914, 1, -262122, 536870914, 1, -262121, 536870914, 1, -262120, 536870914, 1, -196592, 536870914, 0, -131056, 536870914, 0, -65520, 536870914, 0, 16, 536870914, 0, 65552, 536870914, 0, 131088, 536870914, 0, 196624, 536870914, 0, 262160, 536870914, 0 )
+
+[node name="PropGroundBack" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 4 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -196591, 38, 1, -196590, 38, 0, -65519, 536870953, 2, 17, 536870953, 3, 65553, 536870953, 2, 65558, 22, 65536, 131089, 536870953, 3 )
+
+[node name="WallFront" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -196584, 2, 1, -196579, 3, 7, -131048, 2, 1, 262161, 2, 0, 262162, 2, 0 )
+
+[node name="WallFront2" type="TileMap" parent="."]
+position = Vector2( 0, -16 )
+mode = 1
+tile_set = ExtResource( 2 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -196584, 2, 1, -196579, 3, 7, -131048, 2, 1, 262161, 2, 0, 262162, 2, 0 )
+
+[node name="PropGroundFront" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 4 )
+cell_size = Vector2( 16, 8 )
+format = 1
+tile_data = PoolIntArray( -196588, 24, 0, -196587, 24, 0, -196586, 24, 0, 19, 34, 0, 65558, 32, 0, 131095, 21, 0 )
+
+[node name="Roof" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 1 )
+cell_size = Vector2( 16, 8 )
+format = 1
+
+[node name="Roof2" type="TileMap" parent="."]
+mode = 1
+tile_set = ExtResource( 1 )
+cell_size = Vector2( 16, 8 )
+format = 1
