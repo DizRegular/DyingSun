@@ -1,9 +1,37 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://GachaScreen.gd" type="Script" id=1]
-[ext_resource path="res://Goju.tres" type="Resource" id=2]
-[ext_resource path="res://Karoto.tres" type="Resource" id=3]
-[ext_resource path="res://Sasaki.tres" type="Resource" id=4]
+[ext_resource path="res://CompanionData.gd" type="Script" id=2]
+
+[sub_resource type="StreamTexture" id=1]
+flags = 4
+load_path = "res://.import/goju pic.png-efdf9a01133062c9cd68307ecd3b5ad3.stex"
+
+[sub_resource type="Resource" id=2]
+script = ExtResource( 2 )
+character_name = "Goju"
+rarity = 3
+texture = SubResource( 1 )
+
+[sub_resource type="StreamTexture" id=3]
+flags = 4
+load_path = "res://.import/karoto.png-9ad9f3dd926209141374762cfbea6dce.stex"
+
+[sub_resource type="Resource" id=4]
+script = ExtResource( 2 )
+character_name = "Karoto"
+rarity = 2
+texture = SubResource( 3 )
+
+[sub_resource type="StreamTexture" id=5]
+flags = 4
+load_path = "res://.import/sasaki.png-6b72ee9950e8860089ea0f4cc603568d.stex"
+
+[sub_resource type="Resource" id=6]
+script = ExtResource( 2 )
+character_name = "Sasaki"
+rarity = 1
+texture = SubResource( 5 )
 
 [node name="Node2D" type="Node2D"]
 
@@ -11,9 +39,9 @@
 margin_right = 40.0
 margin_bottom = 40.0
 script = ExtResource( 1 )
-pool_3_star = [ ExtResource( 2 ) ]
-pool_2_star = [ ExtResource( 3 ) ]
-pool_1_star = [ ExtResource( 4 ) ]
+pool_3_star = [ SubResource( 2 ) ]
+pool_2_star = [ SubResource( 4 ) ]
+pool_1_star = [ SubResource( 6 ) ]
 
 [node name="SinglePullButton" type="Button" parent="GachaScreen"]
 margin_left = 399.0
